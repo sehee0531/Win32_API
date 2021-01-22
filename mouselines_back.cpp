@@ -63,7 +63,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 	case WM_KEYDOWN:
 		switch (wParam) {
 		case VK_BACK:
-			if (iLines>0) iLines--;
+			if (iLines > 0) {
+				iLines--; lines[iLines].iCount = 0;
+			}
 			InvalidateRect(hWnd, NULL, TRUE);
 			break;
 
