@@ -1,0 +1,5 @@
+﻿cl : 명령줄 warning D9035: 'Gm' 옵션은 더 이상 사용되지 않으므로 이후 릴리스에서 제거될 예정입니다.
+  Mouse.cpp
+c:\users\khm23\onedrive\바탕 화면\mouselines-6-menu - control radio combobox\mouse.cpp(181): error C2065: 'ID_DIALOG': 선언되지 않은 식별자입니다.
+c:\users\khm23\onedrive\바탕 화면\mouselines-6-menu - control radio combobox\mouse.cpp(181): error C2051: case 식이 상수가 아닙니다.
+c:\users\khm23\onedrive\바탕 화면\mouselines-6-menu - control radio combobox\mouse.cpp(184): warning C4060: switch문에 'case' 또는 'default' 레이블이 없습니다.
