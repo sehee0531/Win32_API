@@ -1,178 +1,109 @@
 #include <windows.h>
 
-
-
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-
 HINSTANCE g_hInst;
-
 HWND hWndMain;
-
-LPCTSTR lpszClass = TEXT("Class");
-
-//진입점 Entry point main()
+LPCTSTR lpszClass = TEXT("AnimWin");
 
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance
-
 	, LPSTR lpszCmdParam, int nCmdShow)
-
 {
-
-
-
 	HWND hWnd;
-
 	MSG Message;
-
 	WNDCLASS WndClass;
-
 	g_hInst = hInstance;
 
-
-
 	WndClass.cbClsExtra = 0;
-
 	WndClass.cbWndExtra = 0;
-
 	WndClass.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
-
 	WndClass.hCursor = LoadCursor(NULL, IDC_ARROW);
-
 	WndClass.hIcon = LoadIcon(NULL, IDI_APPLICATION);
-
 	WndClass.hInstance = hInstance;
-
 	WndClass.lpfnWndProc = WndProc;
-
 	WndClass.lpszClassName = lpszClass;
-
 	WndClass.lpszMenuName = NULL;
-
 	WndClass.style = CS_HREDRAW | CS_VREDRAW;
-
 	RegisterClass(&WndClass);
 
-
-
 	hWnd = CreateWindow(lpszClass, lpszClass, WS_OVERLAPPEDWINDOW,
-
 		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-
 		NULL, (HMENU)NULL, hInstance, NULL);
-
 	ShowWindow(hWnd, nCmdShow);
 
-
-
 	while (GetMessage(&Message, NULL, 0, 0)) {
-
 		TranslateMessage(&Message);
-
 		DispatchMessage(&Message);
-
 	}
-
 	return (int)Message.wParam;
-
 }
 
-typedef struct tagmyPoint //구조체
-
-{
-
-	LONG x;
-
-	LONG y;
-
-} myPoint;
-
-
-
-myPoint p[1000];
-
-int iCount; //그려진 점의 개수
-
-
-
+int pan[3][3];
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
-
-{//Window Procedure
-
+{
 	HDC hdc;
-
 	PAINTSTRUCT ps;
-
+	RECT  rect;
+	HBRUSH hBrush, oldBrush;
+	TCHAR *Mes = TEXT("마우스 왼쪽 버튼을 누르시면 애니메이션을 볼 수 있습니다");
 	int x, y;
-
-	HBRUSH hBrush;
-
-	HBRUSH hbrush;
-
-	//Message Driven Architecture
-
+	 
+	static int turn = 1; //static bool turn = 1; 
+	// 0=empty, 1=red, 2 = green
 	switch (iMessage) {
-
-	case WM_CREATE:
-
-		hWndMain = hWnd;
-
-		return 0;
-
-	case 0x0201://WM_LBUTTONDOWN://왼쪽버튼을 누르면
-
-		hdc = GetDC(hWnd); //윈도우 달려있는 그리기도구상자(DC) 얻기 hdc->핸들
-
-		//x = LOWORD(lParam);//lParam->어디에서 눌렀는지를 알려줌
-
-		x = (WORD)(lParam);
-
-		//y = HIWORD(lParam);
-
-		y = (WORD)((lParam) >> 16);
-		p[iCount].x = x;
-		p[iCount].y = y;
-
-		iCount++;
-
-		hBrush = CreateSolidBrush(RGB(255, 0, 0));
-
-		SelectObject(hdc, hBrush);
-
-		Ellipse(hdc, x - 10, y - 10, x + 10, y + 10);//그리기 api, 원(Ellipse),사각형(Rectangle)을 그려라
-
-		return 0;
-
-	case WM_PAINT:
-
-		hdc = BeginPaint(hWnd, &ps);
-
-		for (int i = 0; i < iCount; i++) {
-
-			hBrush = CreateSolidBrush(RGB(255, 0, 0));
-
-			SelectObject(hdc, hBrush);
-
-			Ellipse(hdc, p[i].x - 10, p[i].y - 10,
-
-				p[i].x + 10, p[i].y + 10);
-
+	case WM_LBUTTONDOWN:
+		
+		GetClientRect(hWnd, &rect);
+		SetRect(&rect, rect.left, rect.top, rect.right, rect.bottom);
+		x = (LOWORD(lParam)) / (rect.right/3);
+		y = (HIWORD(lParam)) / (rect.bottom/3);
+		if (pan[x][y] == 0)
+		{
+			pan[x][y] = turn;
+			turn = (turn == 1 ? 2 : 1);
+			InvalidateRect(hWnd, NULL, TRUE);
 		}
 
+		return 0;
+	case WM_PAINT:
+		hdc = BeginPaint(hWnd, &ps);
+		GetClientRect(hWnd, &rect);
+		SetRect(&rect, rect.left, rect.top, rect.right, rect.bottom);
+		
+		for (int i = 0; i < 3; i++){
+			for (int j = 0; j < 3; j++)
+				Rectangle(hdc, i*rect.right / 3, j*rect.bottom / 3, (i+1) * rect.right/3, (j+1) * rect.bottom / 3);
+		}
+		
+		for (int i = 0; i < 3; i++)
+		{
+			for (int j = 0; j < 3; j++)
+			{
+				if (pan[i][j] == 1)
+				{
+					hBrush = (HBRUSH)CreateSolidBrush(RGB(255, 0, 0));
+					oldBrush = (HBRUSH)SelectObject(hdc, hBrush);
+					Ellipse(hdc, i*rect.right / 3, j*rect.bottom / 3, (i + 1) * rect.right / 3, (j + 1)*  rect.bottom / 3);
+					SelectObject(hdc, oldBrush);
+					DeleteObject(hBrush);
 
+				}
+				else if (pan[i][j] == 2){
+					hBrush = (HBRUSH)CreateSolidBrush(RGB(0, 255, 0));
+					oldBrush = (HBRUSH)SelectObject(hdc, hBrush);
+					Ellipse(hdc, i*rect.right / 3, j*rect.bottom / 3, (i + 1) * rect.right / 3, (j + 1)*  rect.bottom / 3);
+					SelectObject(hdc, oldBrush);
+					DeleteObject(hBrush);
+				}
 
+			}
+		}
+		
 		EndPaint(hWnd, &ps);
-
 		return 0;
-
 	case WM_DESTROY:
-
 		PostQuitMessage(0);
-
 		return 0;
-
 	}
-
 	return(DefWindowProc(hWnd, iMessage, wParam, lParam));
-
 }
